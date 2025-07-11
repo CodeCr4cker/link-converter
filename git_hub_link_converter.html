@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Link Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1f4037, #99f2c8);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    textarea, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 1rem;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 8px;
+      border: none;
+    }
+    textarea {
+      background: #f0f0f0;
+      color: #333;
+      height: 150px;
+    }
+    button {
+      background: #27ae60;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2ecc71;
+    }
+    .result-block {
+      margin-top: 2rem;
+      background: #00000050;
+      padding: 1rem;
+      border-radius: 10px;
+      word-break: break-word;
+      max-width: 600px;
+      width: 100%;
+    }
+    a {
+      color: #00ffff;
+    }
+    img.preview {
+      max-width: 100%;
+      margin-top: 0.5rem;
+      border-radius: 10px;
+    }
+    .qr {
+      margin-top: 1rem;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body>
+  <h1>🔗 Multi-Link Converter</h1>
+  <p>Paste multiple GitHub or Google Drive file URLs (one per line):</p>
+  <textarea id="linkInput" placeholder="Paste links here..."></textarea>
+  <button onclick="convertLinks()">Convert All</button>
+
+  <div id="results"></div>
+
+  <script>
+    function convertLinks() {
+      const input = document.getElementById("linkInput").value.trim();
+      const resultDiv = document.getElementById("results");
+      const lines = input.split(/\n+/);
+      resultDiv.innerHTML = "";
+
+      lines.forEach((line, index) => {
+        const url = line.trim();
+        if (!url) return;
+
+        const githubRegex = /^https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/(.+)$/;
+        const gdriveRegex = /^https:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view\?usp=sharing$/;
+        const githubMatch = url.match(githubRegex);
+        const gdriveMatch = url.match(gdriveRegex);
+
+        let outputHtml = `<div class='result-block'><strong>Original:</strong><br>${url}<br><br>`;
+
+        let finalLink = "";
+        if (githubMatch) {
+          const user = githubMatch[1];
+          const repo = githubMatch[2];
+          const path = githubMatch[3];
+          finalLink = `https://raw.githubusercontent.com/${user}/${repo}/${path}`;
+          outputHtml += `✅ <strong>GitHub Raw:</strong><br><a href="${finalLink}" target="_blank">${finalLink}</a><br>`;
+        } else if (gdriveMatch) {
+          const fileId = gdriveMatch[1];
+          finalLink = `https://drive.google.com/uc?export=view&id=${fileId}`;
+          outputHtml += `✅ <strong>Google Drive Direct:</strong><br><a href="${finalLink}" target="_blank">${finalLink}</a><br>`;
+        } else {
+          outputHtml += "❌ Invalid or unsupported URL.";
+        }
+
+        // If link is convertible, show preview and QR
+        if (finalLink) {
+          outputHtml += `<br><strong>Preview:</strong><br><img src="${finalLink}" class="preview" alt="preview"/><br>`;
+          outputHtml += `<canvas id="qr${index}" class="qr"></canvas>`;
+        }
+
+        outputHtml += `<br><a href="${finalLink}" download target="_blank">⬇ Download</a>`;
+        outputHtml += `</div>`;
+        resultDiv.innerHTML += outputHtml;
+
+        // Generate QR code
+        if (finalLink) {
+          const qr = new QRious({
+            element: document.getElementById(`qr${index}`),
+            value: finalLink,
+            size: 128
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
